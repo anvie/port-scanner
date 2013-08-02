@@ -1,5 +1,12 @@
 Simple port scanner library for Go
 
+Installation
+--------------
+
+```bash
+$ go get github.com/anvie/port-scanner
+```
+
 Example Usage
 ----------------
 
