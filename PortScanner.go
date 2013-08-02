@@ -10,18 +10,36 @@ import (
 	"net"
 //	"os"
 	"fmt"
-	"io/ioutil"
-	"strings"
+//	"io/ioutil"
+//	"strings"
+	"github.com/anvie/port-scanner/predictors"
+	"github.com/anvie/port-scanner/predictors/webserver"
 )
 
 
 type PortScanner struct {
 	host string
+	predictors []predictors.Predictor
 }
 
 func NewPortScanner(host string) *PortScanner {
-	return &PortScanner{host}
+	return &PortScanner{host, []predictors.Predictor{
+		webserver.ApachePredictor{},
+		webserver.NginxPredictor{},
+		},
+	}
 }
+
+func (h PortScanner) RegisterPredictor(predictor predictors.Predictor) {
+	for _, p := range h.predictors {
+		if p == predictor {
+			return
+		}
+	}
+	h.predictors = append(h.predictors, predictor)
+}
+
+
 
 func (h PortScanner) IsOpen(port int) bool {
 	tcpAddr, err := net.ResolveTCPAddr("tcp4", h.hostPort(port))
@@ -56,37 +74,33 @@ func (h PortScanner) hostPort(port int) string {
 
 const UNKNOWN = "<unknown>"
 
-func (h PortScanner) DescribePort(port int) string {
-	tcpAddr, err := net.ResolveTCPAddr("tcp4", h.hostPort(port))
+func (h PortScanner) openConn(host string) (*net.TCPConn, error) {
+	tcpAddr, err := net.ResolveTCPAddr("tcp4", host)
 	if (err != nil) {
-		return UNKNOWN
+		return nil, err
 	}
+
+	conn, err := net.DialTCP("tcp", nil, tcpAddr)
+	if err != nil {
+		return nil, err
+	}
+	
+	return conn, nil
+}
+
+func (h PortScanner) DescribePort(port int) string {
 	switch {
 	default:
 		return UNKNOWN
 	case h.IsHttp(port):
-		conn, err := net.DialTCP("tcp", nil, tcpAddr)
-		if err != nil {
-			return UNKNOWN
-		}
-		defer conn.Close()
-
-		_, err = conn.Write([]byte("HEAD / HTTP/1.0\r\n\r\n"))
-		if err != nil {
-			return UNKNOWN
-		}
-
-		result, err := ioutil.ReadAll(conn)
-		if err != nil {
-			return UNKNOWN
-		}
-
-		resp := string(result)
-		rv := h.predictResponse(resp)
-
+		rv := h.PredictUsingPredictor(h.hostPort(port))
 		return rv
 	case port > 0:
-		return h.predictPort(port)
+		rv := h.predictPort(port)
+		if rv == UNKNOWN {
+			rv = h.PredictUsingPredictor(h.hostPort(port))
+		}
+		return rv
 	} 
 }
 
@@ -95,13 +109,19 @@ func (h PortScanner) IsHttp(port int) bool {
 	return port == 80 || port == 8080
 }
 
-func (h PortScanner) predictResponse(resp string) string {
-	if strings.Contains(resp, "HTTP/") {
-		rv := "web service"
-		if strings.Contains(resp, "nginx/") {
-			rv = rv + " nginx"
+
+
+func (h PortScanner) PredictUsingPredictor(host string) string {
+	for _, p := range h.predictors {
+		conn, err := h.openConn(host)
+		if err != nil {
+			break
 		}
-		return rv
+		defer conn.Close()
+		rv := p.Predict(host)
+		if len(rv) > 0 {
+			return rv
+		}
 	}
 	return UNKNOWN
 }
