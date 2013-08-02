@@ -3,7 +3,7 @@ Simple port scanner library for Go
 Example Usage
 ----------------
 
-```golang
+```go
 package main
 
 import (
