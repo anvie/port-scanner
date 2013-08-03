@@ -10,7 +10,7 @@ import (
 	"net"
 //	"os"
 	"fmt"
-	"io/ioutil"
+//	"io/ioutil"
 //	"strings"
 	"github.com/anvie/port-scanner/predictors"
 	"github.com/anvie/port-scanner/predictors/webserver"
@@ -109,18 +109,22 @@ func (h PortScanner) DescribePort(port int) string {
 				conn, err := h.openConn(h.hostPort(port))
 				if err == nil {
 					defer conn.Close()
-					
+
 					duration, _ := time.ParseDuration("3s")
 
 					conn.SetDeadline(time.Now().Add(duration))
 
-					result, err := ioutil.ReadAll(conn)
+					conn.Read(make([]byte, 5))
+					result := make([]byte, 20)
+
+					_, err := conn.Read(result)
 					if err != nil {
-						return ""
+					        fmt.Printf("error: %v\n", err)
+					        return ""
 					}
 
 					resp := string(result)
-					rv = assumed + " footprint: " + resp
+					rv = assumed + " version: " + resp
 				}
 		}
 
