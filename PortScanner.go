@@ -10,10 +10,11 @@ import (
 	"net"
 //	"os"
 	"fmt"
-//	"io/ioutil"
+	"io/ioutil"
 //	"strings"
 	"github.com/anvie/port-scanner/predictors"
 	"github.com/anvie/port-scanner/predictors/webserver"
+	"time"
 )
 
 
@@ -96,10 +97,33 @@ func (h PortScanner) DescribePort(port int) string {
 		rv := h.PredictUsingPredictor(h.hostPort(port))
 		return rv
 	case port > 0:
-		rv := h.predictPort(port)
-		if rv == UNKNOWN {
+		assumed := h.predictPort(port)
+		rv := assumed
+		if assumed == UNKNOWN {
 			rv = h.PredictUsingPredictor(h.hostPort(port))
 		}
+
+		switch assumed {
+			case "MySQL":
+				// get the version
+				conn, err := h.openConn(h.hostPort(port))
+				if err == nil {
+					defer conn.Close()
+					
+					duration, _ := time.ParseDuration("3s")
+
+					conn.SetDeadline(time.Now().Add(duration))
+
+					result, err := ioutil.ReadAll(conn)
+					if err != nil {
+						return ""
+					}
+
+					resp := string(result)
+					rv = assumed + " footprint: " + resp
+				}
+		}
+
 		return rv
 	} 
 }
