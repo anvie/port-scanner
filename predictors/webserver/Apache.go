@@ -5,15 +5,16 @@ import (
 	"strings"
 	"io/ioutil"
 	"time"
+	"github.com/anvie/port-scanner/predictors"
 )
 
 type ApachePredictor struct {
-
+	*predictors.BaseHttpPredictor
 }
 
 
-func (p ApachePredictor) Predict(host string) string {
-	duration, _ := time.ParseDuration("10s")
+func (p *ApachePredictor) Predict(host string) string {
+	duration, _ := time.ParseDuration("3s")
 
 	tcpAddr, err := net.ResolveTCPAddr("tcp4", host)
 	if (err != nil) {
@@ -37,13 +38,13 @@ func (p ApachePredictor) Predict(host string) string {
 		return ""
 	}
 
-	resp := strings.ToLower(string(result))
-	if strings.Contains(resp, "HTTP/") {
-		rv := "web service"
-		if strings.Contains(resp, "apache") {
-			rv = rv + " Apache"
-		}
-		return rv
+	resp := string(result)
+	return p.PredictResponse(resp, p)
+}
+
+func (p *ApachePredictor) PredictResponseDetail(resp string) string {
+	if strings.Contains(resp, "Apache/") {
+		return "Apache"
 	}
 	return ""
 }

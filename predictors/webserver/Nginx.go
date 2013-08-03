@@ -5,15 +5,17 @@ import (
 	"io/ioutil"
 	"strings"
 	"time"
+	"github.com/anvie/port-scanner/predictors"
+//	"fmt"
 )
 
 type NginxPredictor struct {
-
+	predictors.BaseHttpPredictor
 }
 
 
-func (p NginxPredictor) Predict(host string) string {
-	duration, _ := time.ParseDuration("10s")
+func (p *NginxPredictor) Predict(host string) string {
+	duration, _ := time.ParseDuration("3s")
 
 	tcpAddr, err := net.ResolveTCPAddr("tcp4", host)
 	if (err != nil) {
@@ -38,17 +40,14 @@ func (p NginxPredictor) Predict(host string) string {
 	}
 
 	resp := string(result)
-	return predictResponse(resp)
+	return p.PredictResponse(resp, p)
 }
 
-
-func predictResponse(resp string) string {
-	if strings.Contains(resp, "HTTP/") {
-		rv := "web service"
-		if strings.Contains(resp, "nginx/") {
-			rv = rv + " Nginx [ http://wiki.nginx.org/Main ]"
-		}
-		return rv
+func (p *NginxPredictor) PredictResponseDetail(resp string) string {
+	if strings.Contains(resp, "nginx/") {
+		return "Nginx [ http://wiki.nginx.org/Main ]"
 	}
 	return ""
 }
+
+

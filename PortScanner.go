@@ -24,8 +24,8 @@ type PortScanner struct {
 
 func NewPortScanner(host string) *PortScanner {
 	return &PortScanner{host, []predictors.Predictor{
-		webserver.ApachePredictor{},
-		webserver.NginxPredictor{},
+		&webserver.ApachePredictor{},
+		&webserver.NginxPredictor{},
 		},
 	}
 }
