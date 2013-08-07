@@ -181,6 +181,7 @@ var KNOWN_PORTS = map[int]string {
 	3396: "Novell NDPS Printer Agent",
 	3535: "SMTP (alternate)",
 	554: "RTSP",
+	9160: "Cassandra",
 }
 
 func (h PortScanner) predictPort(port int) string {
