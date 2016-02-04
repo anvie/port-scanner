@@ -1,38 +1,43 @@
-/***
- * Simple port scanner
- *
- *
- */
-
 package portscanner
 
 import (
-	"net"
-	//	"os"
 	"fmt"
-	//	"io/ioutil"
-	//	"strings"
-	"github.com/anvie/port-scanner/predictors"
-	"github.com/anvie/port-scanner/predictors/webserver"
+	"net"
 	"time"
+
+	"github.com/rhinesj/port-scanner/predictors"
+	"github.com/rhinesj/port-scanner/predictors/webserver"
+)
+
+const (
+	TIMEOUT_DEFAULT time.Duration = time.Second * 5
 )
 
 type PortScanner struct {
 	host       string
 	predictors []predictors.Predictor
-	timeout    int
+	timeout    time.Duration
 }
 
 func NewPortScanner(host string) *PortScanner {
-	return &PortScanner{host, []predictors.Predictor{
-		&webserver.ApachePredictor{},
-		&webserver.NginxPredictor{},
-	},
+	return NewPortScannerCustom(
+		host,
+		[]predictors.Predictor{
+			&webserver.ApachePredictor{},
+			&webserver.NginxPredictor{},
+		},
+		TIMEOUT_DEFAULT,
+	)
+}
+
+func NewPortScannerCustom(host string, predictors []predictors.Predictor, timeout time.Duration) *PortScanner {
+	return &PortScanner{
+		host:       host,
+		predictors: predictors,
+		timeout:    timeout,
 	}
 }
-func (h PortScanner) SetTimeout(timeout int) {
-	h.timeout = timeout
-}
+
 func (h PortScanner) RegisterPredictor(predictor predictors.Predictor) {
 	for _, p := range h.predictors {
 		if p == predictor {
@@ -57,7 +62,7 @@ func (h PortScanner) IsOpen(port int) bool {
 	return true
 }
 
-func (h PortScanner) GetOpenedPort(portStart int, portEnds int) []int {
+func (h PortScanner) GetOpenedPorts(portStart int, portEnds int) []int {
 	rv := []int{}
 	for port := portStart; port <= portEnds; port++ {
 		if h.IsOpen(port) {
@@ -73,7 +78,7 @@ func (h PortScanner) hostPort(port int) string {
 
 const UNKNOWN = "<unknown>"
 
-func (h PortScanner) openConn(host string) (*net.TCPConn, error) {
+func (h PortScanner) openConn(host string) (net.Conn, error) {
 	tcpAddr, err := net.ResolveTCPAddr("tcp4", host)
 	if err != nil {
 		return nil, err
