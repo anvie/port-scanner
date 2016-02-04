@@ -5,8 +5,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/rhinesj/port-scanner/predictors"
-	"github.com/rhinesj/port-scanner/predictors/webserver"
+	"github.com/anzie/port-scanner/predictors"
+	"github.com/anzie/port-scanner/predictors/webserver"
 )
 
 const (

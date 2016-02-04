@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rhinesj/port-scanner/predictors"
+	"github.com/anzie/port-scanner/predictors"
 )
 
 type ApachePredictor struct {
