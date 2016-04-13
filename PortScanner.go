@@ -74,7 +74,7 @@ func (h PortScanner) hostPort(port int) string {
 
 const UNKNOWN = "<unknown>"
 
-func (h PortScanner) openConn(host string) (*net.TCPConn, error) {
+func (h PortScanner) openConn(host string) (net.Conn, error) {
 	tcpAddr, err := net.ResolveTCPAddr("tcp4", host)
 	if err != nil {
 		return nil, err
