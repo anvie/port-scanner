@@ -12,25 +12,26 @@ import (
 	"fmt"
 	//	"io/ioutil"
 	//	"strings"
+	"time"
+
 	"github.com/anvie/port-scanner/predictors"
 	"github.com/anvie/port-scanner/predictors/webserver"
-	"time"
 )
 
 type PortScanner struct {
 	host       string
 	predictors []predictors.Predictor
-	timeout    int
+	timeout    time.Duration
 }
 
-func NewPortScanner(host string) *PortScanner {
+func NewPortScanner(host string, timeout time.Duration) *PortScanner {
 	return &PortScanner{host, []predictors.Predictor{
 		&webserver.ApachePredictor{},
 		&webserver.NginxPredictor{},
-	},
+	}, timeout,
 	}
 }
-func (h PortScanner) SetTimeout(timeout int) {
+func (h PortScanner) SetTimeout(timeout time.Duration) {
 	h.timeout = timeout
 }
 func (h PortScanner) RegisterPredictor(predictor predictors.Predictor) {
