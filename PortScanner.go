@@ -68,7 +68,7 @@ func (h PortScanner) GetOpenedPort(portStart int, portEnds int) []int {
 			if h.IsOpen(port) {
 				rv = append(rv, port)
 			}
-			fmt.Println("scanned", port)
+			// fmt.Println("scanned", port)
 			<- sem
 		}(port)
 	}
