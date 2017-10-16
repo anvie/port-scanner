@@ -23,19 +23,26 @@ type PortScanner struct {
 	predictors []predictors.Predictor
 	timeout    time.Duration
 	threads    int
+	usePredictor bool
 }
 
 func NewPortScanner(host string, timeout time.Duration, threads int) *PortScanner {
 	return &PortScanner{host, []predictors.Predictor{
 		&webserver.ApachePredictor{},
 		&webserver.NginxPredictor{},
-	}, timeout, threads,
+	}, timeout, threads, true,
 	}
 }
-func (h PortScanner) SetTimeout(timeout time.Duration) {
+func (h *PortScanner) TogglePredictor(usePredictor bool) {
+	h.usePredictor = usePredictor
+}
+func (h *PortScanner) SetThreads(threads int) {
+	h.threads = threads
+}
+func (h *PortScanner) SetTimeout(timeout time.Duration) {
 	h.timeout = timeout
 }
-func (h PortScanner) RegisterPredictor(predictor predictors.Predictor) {
+func (h *PortScanner) RegisterPredictor(predictor predictors.Predictor) {
 	for _, p := range h.predictors {
 		if p == predictor {
 			return
@@ -68,7 +75,6 @@ func (h PortScanner) GetOpenedPort(portStart int, portEnds int) []int {
 			if h.IsOpen(port) {
 				rv = append(rv, port)
 			}
-			// fmt.Println("scanned", port)
 			<- sem
 		}(port)
 	}
@@ -99,6 +105,11 @@ func (h PortScanner) openConn(host string) (net.Conn, error) {
 }
 
 func (h PortScanner) DescribePort(port int) string {
+	if !h.usePredictor {
+		res := h.predictPort(port)
+		return h.predictPort(port)
+	}
+
 	switch {
 	default:
 		return UNKNOWN
@@ -169,12 +180,14 @@ var KNOWN_PORTS = map[int]string{
 	25:    "SMTP",
 	66:    "Oracle SQL*NET?",
 	69:    "tftp",
+	80:    "http",
 	88:    "kerberos",
 	109:   "pop2",
 	110:   "pop3",
 	123:   "ntp",
 	137:   "netbios",
 	139:   "netbios",
+	443:   "https",
 	445:   "Samba",
 	631:   "cups",
 	5800:  "VNC remote desktop",
