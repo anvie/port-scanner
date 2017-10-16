@@ -15,12 +15,13 @@ package main
 
 import (
     "fmt"
+	"time"
 	"github.com/anvie/port-scanner"
 )
 
 func main(){
-
-     ps := portscanner.NewPortScanner("localhost")
+     // scan localhost with a 2 second timeout per port in 5 concurrent threads
+     ps := portscanner.NewPortScanner("localhost", 2*time.Second, 5)
 
      // get opened port
      fmt.Printf("scanning port %d-%d...\n", 20, 30000)
