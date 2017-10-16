@@ -22,13 +22,14 @@ type PortScanner struct {
 	host       string
 	predictors []predictors.Predictor
 	timeout    time.Duration
+	threads    int
 }
 
-func NewPortScanner(host string, timeout time.Duration) *PortScanner {
+func NewPortScanner(host string, timeout time.Duration, threads int) *PortScanner {
 	return &PortScanner{host, []predictors.Predictor{
 		&webserver.ApachePredictor{},
 		&webserver.NginxPredictor{},
-	}, timeout,
+	}, timeout, threads,
 	}
 }
 func (h PortScanner) SetTimeout(timeout time.Duration) {
@@ -60,10 +61,19 @@ func (h PortScanner) IsOpen(port int) bool {
 
 func (h PortScanner) GetOpenedPort(portStart int, portEnds int) []int {
 	rv := []int{}
+	sem := make(chan bool, h.threads)
 	for port := portStart; port <= portEnds; port++ {
-		if h.IsOpen(port) {
-			rv = append(rv, port)
-		}
+		sem <- true
+		go func(port int) {
+			if h.IsOpen(port) {
+				rv = append(rv, port)
+			}
+			fmt.Println("scanned", port)
+			<- sem
+		}(port)
+	}
+	for i := 0; i < cap(sem); i++ {
+		sem <- true
 	}
 	return rv
 }
