@@ -106,7 +106,6 @@ func (h PortScanner) openConn(host string) (net.Conn, error) {
 
 func (h PortScanner) DescribePort(port int) string {
 	if !h.usePredictor {
-		res := h.predictPort(port)
 		return h.predictPort(port)
 	}
 
