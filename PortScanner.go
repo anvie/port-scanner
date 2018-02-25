@@ -13,6 +13,7 @@ import (
 	//	"io/ioutil"
 	//	"strings"
 	"time"
+	"sync"
 
 	"github.com/anvie/port-scanner/predictors"
 	"github.com/anvie/port-scanner/predictors/webserver"
@@ -68,12 +69,15 @@ func (h PortScanner) IsOpen(port int) bool {
 
 func (h PortScanner) GetOpenedPort(portStart int, portEnds int) []int {
 	rv := []int{}
+	l := sync.Mutex{}
 	sem := make(chan bool, h.threads)
 	for port := portStart; port <= portEnds; port++ {
 		sem <- true
 		go func(port int) {
 			if h.IsOpen(port) {
+				l.Lock()
 				rv = append(rv, port)
+				l.Unlock()
 			}
 			<- sem
 		}(port)
